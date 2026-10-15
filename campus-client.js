@@ -9,6 +9,15 @@ function randomSession(){const a=crypto.getRandomValues(new Uint8Array(16));retu
 try{session=localStorage.getItem(SESSION_KEY)||'';}catch{}
 if(!/^[a-f0-9]{32}$/.test(session)){session=randomSession();try{localStorage.setItem(SESSION_KEY,session);}catch{}}
 function publicError(message){const e=new Error(message);e.public=true;return e;}
+function abortable(promise, signal){
+ if(!signal)return promise;
+ if(signal.aborted)return Promise.reject(new DOMException('Aborted','AbortError'));
+ return new Promise((resolve,reject)=>{
+  const onAbort=()=>reject(new DOMException('Aborted','AbortError'));
+  signal.addEventListener('abort',onAbort,{once:true});
+  promise.then(value=>{signal.removeEventListener('abort',onAbort);resolve(value);},error=>{signal.removeEventListener('abort',onAbort);reject(error);});
+ });
+}
 function errorFor(status){return publicError(status===429?'当前咨询较多，请稍后再试。':status===401||status===403?'连接已失效，请重新连接后再发送。':status===404||status===400?'当前对话无法继续，请新建对话。':'问答服务暂时不可用，请稍后手动重试。');}
 async function authenticate(){
  if(passport&&Date.now()<passportExpiry)return passport;
@@ -125,7 +134,8 @@ async function send({query,conversation_id='',parent_message_id='',signal}){
  if(conversation_id&&!conversationPattern.test(parent_message_id))throw publicError('对话上下文缺失，请新建对话。');
  busy=true;const start=performance.now();
  try{
-  const token=await authenticate();if(signal?.aborted)throw new DOMException('Aborted','AbortError');
+  if(signal?.aborted)throw new DOMException('Aborted','AbortError');
+  const token=await abortable(authenticate(),signal);if(signal?.aborted)throw new DOMException('Aborted','AbortError');
   const signals=[AbortSignal.timeout(STREAM_LIMITS.timeoutMs)];if(signal)signals.push(signal);const requestSignal=AbortSignal.any(signals);
   const r=await fetch(ORIGIN+'/api/chat-messages',{method:'POST',credentials:'omit',redirect:'error',signal:requestSignal,headers:{'Content-Type':'application/json','Accept':'text/event-stream','X-App-Code':APP_CODE,'X-App-Passport':token},body:JSON.stringify({inputs:{},query:query.trim(),conversation_id,response_mode:'streaming',parent_message_id:conversation_id?parent_message_id:null,files:[]})});
   if(!r.ok){if([401,403].includes(r.status)){passport='';passportExpiry=0;}throw errorFor(r.status);}
