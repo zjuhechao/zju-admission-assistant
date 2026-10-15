@@ -3,11 +3,9 @@
 (() => {
 const ORIGIN='https://dify-app.zju.edu.cn';
 const APP_CODE='QtF9797PfD1mnoZt';
-const SESSION_KEY='zju_admission_public_session_v1';
-let session='', passport='', passportExpiry=0, authPromise=null, busy=false;
-function randomSession(){const a=crypto.getRandomValues(new Uint8Array(16));return Array.from(a,x=>x.toString(16).padStart(2,'0')).join('');}
-try{session=localStorage.getItem(SESSION_KEY)||'';}catch{}
-if(!/^[a-f0-9]{32}$/.test(session)){session=randomSession();try{localStorage.setItem(SESSION_KEY,session);}catch{}}
+// Each page instance has its own visitor; nothing is restored from browser storage.
+const session=Array.from(crypto.getRandomValues(new Uint8Array(16)),x=>x.toString(16).padStart(2,'0')).join('');
+let passport='', passportExpiry=0, authPromise=null, busy=false;
 function publicError(message){const e=new Error(message);e.public=true;return e;}
 function abortable(promise, signal){
  if(!signal)return promise;
