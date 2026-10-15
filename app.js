@@ -33,7 +33,7 @@
    try{index=await loadSources();}catch{const row=element('div','source-load-error');row.append(element('span','','来源加载失败。'));const retry=element('button','','重试');retry.type='button';retry.onclick=populate;row.append(retry);content.replaceChildren(row);loading=false;return;}
    content.replaceChildren();
    for(const name of names){
-    const variants=index.filter(x=>x.title===name);
+    const variants=index.filter(x=>x.title===name||x.runtime_title===name);
     for(const src of variants.length?variants:[null]){
      const card=element('div','source-item');card.append(element('p','',name));
      if(src){
