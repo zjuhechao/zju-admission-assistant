@@ -41,6 +41,7 @@
         profile.type = t.key;
         wrap.querySelectorAll('button').forEach(x => x.classList.toggle('active', x === b));
         refreshReady();
+        updateTypeHint();
       };
       wrap.append(b);
     }
@@ -140,11 +141,50 @@
     const card = $('profile-card');
     if (card) card.hidden = true;
     if (profile.familiarity === '不了解') showFAQ(profile.type);
+    updateSessionTypeBar();
     const input = $('question');
     if (input) input.focus();
   }
 
-  window.ZJUProfile = { getPrefix, getProfile: () => ({ ...profile }) };
+  function updateTypeHint() {
+    const hint = $('profile-type-hint');
+    if (!hint) return;
+    if (profile.type && profile.type !== '其他') {
+      hint.hidden = false;
+      hint.textContent = '为保证精准，本次咨询将仅回答「' + profile.type + '」相关问题；如需询问其他类型，请重新开始会话。';
+    } else {
+      hint.hidden = true;
+    }
+  }
+
+  function updateSessionTypeBar() {
+    const bar = $('session-type-bar');
+    if (!bar) return;
+    if (profile.type && profile.type !== '其他') {
+      bar.hidden = false;
+      bar.textContent = '当前咨询类型：' + profile.type + ' · 仅回答该类型问题，其他类型请重新开始会话';
+    } else {
+      bar.hidden = true;
+    }
+  }
+
+  function resetProfile() {
+    profile.province = ''; profile.type = ''; profile.familiarity = '';
+    const card = $('profile-card');
+    if (card) card.hidden = false;
+    const sel = $('profile-province');
+    if (sel) sel.value = '';
+    document.querySelectorAll('#profile-types button').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('#profile-familiarity button').forEach(x => x.classList.remove('active'));
+    const hint = $('profile-type-hint');
+    if (hint) hint.hidden = true;
+    const bar = $('session-type-bar');
+    if (bar) bar.hidden = true;
+    hideFAQ();
+    refreshReady();
+  }
+
+  window.ZJUProfile = { getPrefix, getProfile: () => ({ ...profile }), reset: resetProfile };
 
   buildProvinceOptions();
   buildTypeButtons();
