@@ -53,9 +53,10 @@ main{flex:1;display:flex;flex-direction:column;min-width:0;background:var(--pape
 
 /* ===== 内容区 ===== */
 .scroll-area{flex:1;overflow-y:auto;padding:0 28px}
-.welcome{max-width:680px;margin:11vh auto 40px;text-align:center}
-.welcome-art{width:92px;height:92px;border-radius:26px;background:linear-gradient(150deg,var(--blue-100),#fff);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;margin:0 auto 26px;box-shadow:var(--shadow-sm)}
-.welcome-art img{width:52px;height:52px}
+.welcome{position:relative;max-width:680px;margin:11vh auto 40px;text-align:center}
+.welcome::before{content:"";position:absolute;top:-60px;left:50%;transform:translateX(-50%);width:300px;height:92px;background:url('stardust-gold.svg') center/auto 100% no-repeat;opacity:.5;pointer-events:none}
+.welcome-art{width:96px;height:96px;border-radius:26px;background:linear-gradient(150deg,#fbf6e7,#fffdf8);border:1px solid #e7ddc0;display:flex;align-items:center;justify-content:center;margin:0 auto 26px;box-shadow:var(--shadow-sm)}
+.welcome-art img{width:58px;height:58px}
 .eyebrow{font-size:13px;letter-spacing:.16em;color:var(--blue-700);margin:0 0 10px;font-weight:600}
 .welcome h2{font:600 32px var(--serif);margin:0 0 12px;letter-spacing:.02em}
 .welcome-sub{font-size:15px;color:var(--ink-2);margin:0}

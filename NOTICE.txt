@@ -1,12 +1,18 @@
-本图标集取自 IconPark（图标库）
-上游项目: https://github.com/bytedance/IconPark
-上游包名: @icon-park/svg@1.4.2
-著作权归 北京字节跳动科技有限公司 及 IconPark 贡献者所有
-许可协议: Apache License 2.0（见同目录 IconPark-LICENSE.txt）
+本界面图标与装饰元素来源说明
 
-可商用说明:
+一、品牌与主题元素（灿若星辰灯）
+  文件：school.svg（球形灯标识）、book.svg（灿若星辰灯·金色）、stardust-gold.svg（星尘背景）
+  来源：本项目作者提供的“灿若星辰”主题素材，用于界面品牌标识与欢迎区装饰。
+
+二、功能图标（IconPark）
+  文件：download.svg、refresh.svg、copy.svg
+  上游项目: https://github.com/bytedance/IconPark
+  上游包名: @icon-park/svg@1.4.2
+  著作权归 北京字节跳动科技有限公司 及 IconPark 贡献者所有
+  许可协议: Apache License 2.0（见同目录 IconPark-LICENSE.txt）
+
+可商用说明（IconPark 部分）:
   · 允许免费用于商业项目，包括闭源商用产品，无需支付费用。
   · 需保留本目录下的 LICENSE 与 NOTICE 文件及版权声明。
   · 若修改图标文件，需在文件中注明已修改。
   · 不得使用 "IconPark" 名称或商标为自有产品背书。
-
