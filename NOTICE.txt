@@ -1,7 +1,7 @@
 本界面图标与装饰元素来源说明
 
 一、品牌与主题元素（灿若星辰灯）
-  文件：school.svg（球形灯标识）、book.svg（灿若星辰灯·金色）、stardust-gold.svg（星尘背景）
+  文件：school.svg（球形灯标识）、book.svg（灿若星辰灯·金色）、stardust-gold.svg（星尘背景）、stardust-lamp.svg（灿若星辰灯柱群背景装饰）
   来源：本项目作者提供的“灿若星辰”主题素材，用于界面品牌标识与欢迎区装饰。
 
 二、功能图标（IconPark）
