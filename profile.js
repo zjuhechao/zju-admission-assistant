@@ -1,195 +1,218 @@
 "use strict";
-/* 浙大招小办 · 画像引导卡与常用问题集
-   画像仅存本页内存（与对话一致，刷新即清空，不写 localStorage）。
-   画像通过首条消息的结构化前缀传给后端，用于分流与回答风格控制。 */
+// 招小办 · 来访者画像
+// 只保存画像字段到本机浏览器（单键），不保存对话、草稿或访客标识。
+// 画像只用于理解身份与招生口径，不作为事实依据，也不进入检索词。
 (() => {
-  const $ = id => document.getElementById(id);
-  const profile = { province: '', type: '', familiarity: '' };
-  const PROVINCES = ['北京','天津','河北','山西','内蒙古','辽宁','吉林','黑龙江','上海','江苏','浙江','安徽','福建','江西','山东','河南','湖北','湖南','广东','广西','海南','重庆','四川','贵州','云南','西藏','陕西','甘肃','青海','宁夏','新疆','香港','澳门','台湾'];
-  const TYPES = [
-    { key: '普通本科', faq: ['普通本科'] },
-    { key: '强基计划', faq: ['强基计划'] },
-    { key: '三位一体', faq: ['三位一体'] },
-    { key: '综合评价', faq: ['综合评价'] },
-    { key: '外语保送生', faq: ['外语保送生'] },
-    { key: '港澳台招生', faq: ['港澳台招生'] },
-    { key: '艺术体育类', faq: ['运动训练', '美术学与艺术科技'] },
-    { key: '国际合作项目', faq: ['国际合作项目'] },
-    { key: '高校专项', faq: ['高校专项'] },
-    { key: '其他', faq: [] }
-  ];
-  let faqData = null;
+const VERSION = 1;
+const KEY = 'zju_admission_profile_v1';
+const MAX_NOTES = 240;
+const MAX_TYPES = 4;
+const MAX_TARGETS = 3;
+const MAX_BONUS = 2;
 
-  function buildProvinceOptions() {
-    const sel = $('profile-province');
-    if (!sel) return;
-    sel.replaceChildren(new Option('请选择省份', ''));
-    for (const p of PROVINCES) sel.add(new Option(p, p));
-    sel.onchange = () => { profile.province = sel.value; refreshReady(); };
+// 选项来自《人工问答采集_1200题》的招生类型与学院分布；不新增学校未公开的项目。
+const GROUPS = [
+  {
+    key: 'role', label: '我是谁', hint: '决定答复称呼与解释深度',
+    options: ['考生本人', '家长', '中学老师', '其他亲友']
+  },
+  {
+    key: 'region', label: '招生地区', hint: '港澳台与国际学生口径不同，必须区分',
+    options: ['浙江', '上海', '广东', '江苏', '山东', '河南', '四川', '其他省份', '香港', '澳门', '台湾', '国际学生']
+  },
+  {
+    key: 'types', label: '招生类型', hint: '可多选，最多 4 项；不确定就选“还没确定”',
+    multiple: true, max: MAX_TYPES,
+    options: ['普通本科（高考）', '强基计划', '三位一体', '综合评价', '外语类保送', '高校专项', '艺术类', '运动训练', '港澳台招生', '国际本科', '还没确定']
   }
+];
 
-  function buildTypeButtons() {
-    const wrap = $('profile-types');
-    if (!wrap) return;
-    wrap.replaceChildren();
-    for (const t of TYPES) {
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.textContent = t.key;
-      b.dataset.type = t.key;
-      b.onclick = () => {
-        profile.type = t.key;
-        wrap.querySelectorAll('button').forEach(x => x.classList.toggle('active', x === b));
-        refreshReady();
-        updateTypeHint();
-      };
-      wrap.append(b);
-    }
+const MORE_GROUPS = [
+  {
+    key: 'stage', label: '当前阶段', hint: '用年级代替年龄，不收集生日',
+    options: ['高三', '高二', '高一', '初中及以下', '往届毕业', '其他阶段']
   }
+];
 
-  function buildFamiliarityButtons() {
-    const wrap = $('profile-familiarity');
-    if (!wrap) return;
-    wrap.replaceChildren();
-    const options = [
-      { key: '了解', hint: '直接提问，答复简洁', value: '了解' },
-      { key: '不了解', hint: '先看常见问题，再详细解答', value: '不了解' }
-    ];
-    for (const o of options) {
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.textContent = o.key;
-      b.dataset.familiarity = o.value;
-      b.onclick = () => {
-        profile.familiarity = o.value;
-        wrap.querySelectorAll('button').forEach(x => x.classList.toggle('active', x === b));
-        refreshReady();
-        if (o.value === '不了解') showFAQ(profile.type);
-        else hideFAQ();
-      };
-      wrap.append(b);
-    }
+// 2026 年招生问答中出现的创新班班型（仅作意向标签，不等于当年招生承诺）。
+const BONUS_OPTIONS = [
+  '脑机智能创新班', '智能制造与机器人创新班', '未来汽车创新班', '智能光电芯片及系统创新班',
+  '智能与国际传播创新班', '经济学拔尖班', '会计学（智能财务创新班）', '农业工程（农业智能机器人创新班）',
+  '医学试验班（未来健康创新班）', '基础医学（智慧创新班）', '工科试验班（EE类）创新班'
+];
+
+const TARGET_OPTIONS = [
+  '竺可桢学院', '计算机科学与技术学院', '人工智能学院', '信息与电子工程学院', '医学院',
+  '管理学院', '经济学院', '电气工程学院', '机械工程学院', '外国语学院', 'ZJU-UoE联合学院',
+  '创新班（2026）', '还没确定'
+];
+
+const TRANSFER_OPTIONS = ['想转专业', '暂不考虑', '还在了解'];
+
+const ALL = new Map();
+for (const group of [...GROUPS, ...MORE_GROUPS]) {
+  for (const value of group.options) ALL.set(value, true);
+}
+for (const value of [...TARGET_OPTIONS, ...TRANSFER_OPTIONS, ...BONUS_OPTIONS]) ALL.set(value, true);
+
+function blank() {
+  return {
+    v: VERSION, role: '', region: '', stage: '', types: [], targets: [],
+    transfer: '', bonus: [], notes: '', carry: true, skipped: false, updated_at: 0
+  };
+}
+
+function cleanText(value, max) {
+  if (typeof value !== 'string') return '';
+  return value.replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, max);
+}
+
+function cleanOne(value) {
+  const text = cleanText(value, 40);
+  return ALL.has(text) ? text : '';
+}
+
+function cleanList(value, allowedMax) {
+  if (!Array.isArray(value)) return [];
+  const out = [];
+  for (const item of value) {
+    const one = cleanOne(item);
+    if (one && !out.includes(one) && out.length < allowedMax) out.push(one);
   }
+  return out;
+}
 
-  function refreshReady() {
-    const ready = !!(profile.province && profile.type && profile.familiarity);
-    const btn = $('profile-start');
-    if (btn) {
-      btn.disabled = !ready;
-      btn.textContent = ready ? '开始咨询' : '请先完成以上选择';
-    }
+function sanitize(raw) {
+  const base = blank();
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return base;
+  base.role = cleanOne(raw.role);
+  base.region = cleanOne(raw.region);
+  base.stage = cleanOne(raw.stage);
+  base.types = cleanList(raw.types, MAX_TYPES);
+  base.targets = cleanList(raw.targets, MAX_TARGETS);
+  base.transfer = cleanOne(raw.transfer);
+  base.bonus = cleanList(raw.bonus, MAX_BONUS);
+  base.notes = cleanText(raw.notes, MAX_NOTES);
+  base.carry = raw.carry !== false;
+  base.skipped = raw.skipped === true;
+  base.updated_at = Number.isFinite(raw.updated_at) ? Math.max(0, Math.floor(raw.updated_at)) : 0;
+  return base;
+}
+
+function storage() {
+  try {
+    const store = window.localStorage;
+    return store && typeof store.getItem === 'function' ? store : null;
+  } catch { return null; }
+}
+
+function load() {
+  const base = blank();
+  const store = storage();
+  if (!store) return { profile: base, stored: false, available: false };
+  try {
+    const text = store.getItem(KEY);
+    if (typeof text !== 'string' || !text) return { profile: base, stored: false, available: true };
+    const parsed = JSON.parse(text);
+    if (!parsed || typeof parsed !== 'object' || parsed.v !== VERSION) return { profile: base, stored: false, available: true };
+    return { profile: sanitize(parsed), stored: true, available: true };
+  } catch {
+    return { profile: base, stored: false, available: true };
   }
+}
 
-  function getPrefix() {
-    if (!profile.province && !profile.type && !profile.familiarity) return '';
-    return '【画像】省份：' + (profile.province || '未填') + '；招生类型：' + (profile.type || '未填') + '；了解程度：' + (profile.familiarity || '未填') + '。';
+function save(profile) {
+  const clean = sanitize(profile);
+  clean.updated_at = Date.now();
+  const store = storage();
+  if (!store) return { ok: false, profile: clean };
+  try {
+    store.setItem(KEY, JSON.stringify(clean));
+    return { ok: true, profile: clean };
+  } catch {
+    return { ok: false, profile: clean };
   }
+}
 
-  async function loadFAQ() {
-    if (faqData) return faqData;
-    const r = await fetch('./faq.json');
-    faqData = await r.json();
-    return faqData;
-  }
+function clear() {
+  const store = storage();
+  if (!store) return false;
+  try { store.removeItem(KEY); return true; } catch { return false; }
+}
 
-  function faqItem(q, a) {
-    const item = document.createElement('div');
-    item.className = 'faq-item';
-    const qn = document.createElement('button');
-    qn.type = 'button';
-    qn.className = 'faq-q';
-    qn.textContent = q;
-    qn.title = '点击此问题直接提问';
-    qn.onclick = () => {
-      const input = $('question');
-      if (input) { input.value = q; input.focus(); input.dispatchEvent(new Event('input')); }
-    };
-    const an = document.createElement('p');
-    an.className = 'faq-a';
-    an.textContent = a;
-    item.append(qn, an);
-    return item;
-  }
+function valuesOf(profile, key) {
+  if (!profile) return [];
+  const value = profile[key];
+  if (Array.isArray(value)) return value.slice();
+  return value ? [value] : [];
+}
 
-  async function showFAQ(typeKey) {
-    const panel = $('faq-panel');
-    if (!panel) return;
-    const data = await loadFAQ();
-    panel.replaceChildren();
-    const head = document.createElement('p');
-    head.className = 'faq-head';
-    head.textContent = '常见问题，点击即可直接提问';
-    panel.append(head);
-    // 通用咨询
-    for (const x of data['通用咨询'] || []) panel.append(faqItem(x.q, x.a));
-    // 对应类型专题
-    const type = (TYPES.find(t => t.key === typeKey) || { faq: [] });
-    for (const key of type.faq) {
-      for (const x of (data['招生类型'] || {})[key] || []) panel.append(faqItem(x.q, x.a));
-    }
-    if (!type.faq.length) {
-      for (const key of Object.keys(data['招生类型'] || {})) {
-        for (const x of data['招生类型'][key] || []) panel.append(faqItem(x.q, x.a));
-      }
-    }
-    panel.hidden = false;
-  }
+function filledGroups(profile) {
+  const p = profile || blank();
+  const total = 4;
+  let done = 0;
+  if (p.role) done++;
+  if (p.region) done++;
+  if (p.types.length) done++;
+  if (p.targets.length) done++;
+  return { done, total };
+}
 
-  function hideFAQ() { const p = $('faq-panel'); if (p) p.hidden = true; }
+function isEmpty(profile) {
+  const p = profile || blank();
+  return !p.role && !p.region && !p.stage && !p.types.length && !p.targets.length && !p.transfer && !p.bonus.length && !p.notes;
+}
 
-  function startChat() {
-    const card = $('profile-card');
-    if (card) card.hidden = true;
-    if (profile.familiarity === '不了解') showFAQ(profile.type);
-    updateSessionTypeBar();
-    const input = $('question');
-    if (input) input.focus();
-  }
+function summary(profile) {
+  const p = profile || blank();
+  const parts = [];
+  if (p.role) parts.push(p.role);
+  if (p.region) parts.push(p.region);
+  if (p.types.length) parts.push(p.types.join('、'));
+  if (p.targets.length) parts.push(p.targets.join('、'));
+  return parts;
+}
 
-  function updateTypeHint() {
-    const hint = $('profile-type-hint');
-    if (!hint) return;
-    if (profile.type && profile.type !== '其他') {
-      hint.hidden = false;
-      hint.textContent = '为保证精准，本次咨询将仅回答「' + profile.type + '」相关问题；如需询问其他类型，请重新开始会话。';
-    } else {
-      hint.hidden = true;
-    }
-  }
+function detailParts(profile) {
+  const p = profile || blank();
+  const parts = [];
+  if (p.role) parts.push('身份：' + p.role);
+  if (p.region) parts.push('招生地区：' + p.region);
+  if (p.stage) parts.push('当前阶段：' + p.stage);
+  if (p.types.length) parts.push('关注类型：' + p.types.join('、'));
+  if (p.targets.length) parts.push('意向专业/学院：' + p.targets.join('、'));
+  if (p.bonus.length) parts.push('意向创新班：' + p.bonus.join('、'));
+  if (p.transfer) parts.push('转专业意向：' + p.transfer);
+  if (p.notes) parts.push('补充说明：' + p.notes);
+  return parts;
+}
 
-  function updateSessionTypeBar() {
-    const bar = $('session-type-bar');
-    if (!bar) return;
-    if (profile.type && profile.type !== '其他') {
-      bar.hidden = false;
-      bar.textContent = '当前咨询类型：' + profile.type + ' · 仅回答该类型问题，其他类型请重新开始会话';
-    } else {
-      bar.hidden = true;
-    }
-  }
+function queryPrefix(profile) {
+  const parts = detailParts(profile);
+  if (!parts.length) return '';
+  return '【来访者画像｜只用于理解来电者身份与招生口径，不是事实依据，不要复述、不要写进检索词】'
+    + parts.join('；') + '。';
+}
 
-  function resetProfile() {
-    profile.province = ''; profile.type = ''; profile.familiarity = '';
-    const card = $('profile-card');
-    if (card) card.hidden = false;
-    const sel = $('profile-province');
-    if (sel) sel.value = '';
-    document.querySelectorAll('#profile-types button').forEach(x => x.classList.remove('active'));
-    document.querySelectorAll('#profile-familiarity button').forEach(x => x.classList.remove('active'));
-    const hint = $('profile-type-hint');
-    if (hint) hint.hidden = true;
-    const bar = $('session-type-bar');
-    if (bar) bar.hidden = true;
-    hideFAQ();
-    refreshReady();
-  }
+function composeQuery(profile, question) {
+  const q = typeof question === 'string' ? question.trim() : '';
+  if (!q) return '';
+  if (!profile || profile.carry === false) return q;
+  const prefix = queryPrefix(profile);
+  return prefix ? prefix + '\n\n问题：' + q : q;
+}
 
-  window.ZJUProfile = { getPrefix, getProfile: () => ({ ...profile }), reset: resetProfile };
+function describe(profile, key) {
+  const p = profile || blank();
+  if (key === 'targets') return p.targets.length ? p.targets.join('、') : '';
+  if (key === 'types') return p.types.length ? p.types.join('、') : '';
+  return p[key] || '';
+}
 
-  buildProvinceOptions();
-  buildTypeButtons();
-  buildFamiliarityButtons();
-  const startBtn = $('profile-start');
-  if (startBtn) startBtn.onclick = startChat;
-  refreshReady();
+window.ZJUProfile = Object.freeze({
+  VERSION, KEY, MAX_NOTES, MAX_TYPES, MAX_TARGETS, MAX_BONUS,
+  GROUPS, MORE_GROUPS, TARGET_OPTIONS, TRANSFER_OPTIONS, BONUS_OPTIONS,
+  blank, sanitize, load, save, clear, valuesOf, filledGroups, isEmpty, summary,
+  detailParts, queryPrefix, composeQuery, describe
+});
 })();

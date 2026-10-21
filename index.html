@@ -2,17 +2,18 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#f7f8fa"><meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta name="theme-color" content="#f5f3ee"><meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta name="description" content="浙江大学本科招生问答：先记下来访者画像，再按公开政策与专业资料逐条附依据作答。">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://dify-app.zju.edu.cn; object-src 'none'; base-uri 'none'; form-action 'none'">
-  <title>浙大招小办 · 招生问答</title>
+  <title>浙大招小办 · 本科招生问答</title>
   <link rel="icon" type="image/svg+xml" href="./school.svg"><link rel="stylesheet" href="./style.css">
-  <script src="./campus-client.js" defer></script><script src="./profile.js" defer></script><script src="./app.js" defer></script>
+  <script src="./profile.js" defer></script><script src="./campus-client.js" defer></script><script src="./app.js" defer></script>
 </head>
 <body>
   <a class="skip" href="#question">跳到提问</a>
   <div class="app-shell">
     <aside id="sidebar" aria-label="咨询记录">
-      <div class="sidebar-brand"><img src="./school.svg" alt="" width="27" height="27"><span>浙大招小办</span><button id="close-sidebar" class="icon-button mobile-only" aria-label="关闭记录">×</button></div>
+      <div class="sidebar-brand"><span class="brand-mark"><img src="./lamp-gold.svg" alt="" width="22" height="22"></span><span class="brand-word">浙大招小办</span><button id="close-sidebar" class="icon-button mobile-only" aria-label="关闭记录">×</button></div>
       <button id="new-chat" class="new-chat"><span aria-hidden="true">＋</span> 新建对话</button>
       <div class="list-heading">最近对话</div><nav id="history" aria-label="最近对话"></nav>
       <p id="history-empty" class="quiet">还没有对话记录</p>
@@ -20,17 +21,46 @@
     </aside>
     <button id="backdrop" class="backdrop" aria-label="关闭记录" hidden></button>
     <main>
-      <div class="lamp-bg" aria-hidden="true"><img src="./stardust-lamp.svg" alt=""></div>
-      <header class="topbar"><div class="title-group"><button id="toggle-sidebar" class="icon-button" title="咨询记录" aria-label="展开或收起咨询记录" aria-expanded="true">☰</button><div><h1>浙大招小办</h1><p>浙江大学本科招生问答</p></div></div><div class="connection"><span id="status-dot" class="status-dot"></span><span id="status" role="status">正在连接</span><button id="retry" class="icon-button" title="重新连接" aria-label="重新连接"><img src="./refresh.svg" alt="" width="16" height="16"></button></div></header>
+      <header class="topbar">
+        <div class="title-group"><button id="toggle-sidebar" class="icon-button" title="咨询记录" aria-label="展开或收起咨询记录" aria-expanded="true">☰</button><div><h1>浙大招小办</h1><p>浙江大学本科招生问答</p></div></div>
+        <div class="topbar-right">
+          <button id="profile-pill" class="profile-pill" aria-label="查看或修改来访者画像"><span class="profile-pill-dot" aria-hidden="true"></span><span id="profile-pill-label">我的画像</span></button>
+          <div class="connection"><span id="status-dot" class="status-dot"></span><span id="status" role="status">正在连接</span><button id="retry" class="icon-button" title="重新连接" aria-label="重新连接"><img src="./refresh.svg" alt="" width="16" height="16"></button></div>
+        </div>
+      </header>
       <div id="scroll-area" class="scroll-area">
-        <section id="welcome" class="welcome"><div class="welcome-art"><img src="./book.svg" alt="" width="58" height="58"></div><p class="eyebrow">浙大招小办 · 招生咨询</p><h2>想了解什么？</h2><p class="welcome-sub">查询浙江大学本科招生的公开政策与专业介绍，答复附可核对依据。</p><div id="profile-card" class="profile-card"><p class="profile-title">先简单了解您的情况，以便更准确地解答</p><div class="profile-row"><label for="profile-province">所在省份</label><select id="profile-province" aria-label="选择所在省份"></select></div><div class="profile-row"><label>想了解的招生类型</label><div id="profile-types" class="profile-types"></div></div><div class="profile-row"><label>您了解相关招生政策吗？</label><div id="profile-familiarity" class="profile-familiarity"></div></div><button id="profile-start" type="button" class="profile-start" disabled>请先完成以上选择</button><p id="profile-type-hint" class="profile-type-hint" hidden></p></div><div id="faq-panel" class="faq-panel" hidden></div><div class="suggestions"><button data-question="2026年强基计划培养方案在哪里查看？">强基计划培养方案 <span>↗</span></button><button data-question="计算机科学与技术专业主要学什么？">专业学习内容 <span>↗</span></button><button data-question="2026年浙江大学本科招生咨询电话是什么？">招生咨询电话 <span>↗</span></button></div></section>
-        <section id="session-type-bar" class="session-type-bar" hidden></section>
+        <section id="welcome" class="welcome">
+          <div class="welcome-grid">
+            <div class="welcome-copy">
+              <div class="welcome-art"><img src="./lamp-illustration.svg" alt="" width="64" height="64"></div>
+              <p class="eyebrow">浙大招小办 · 招生咨询</p>
+              <h2>想了解什么？</h2>
+              <p class="welcome-sub">先勾选你的来访者画像，招小办就能按你的身份、地区和招生类型，查找浙江大学本科招生的公开政策与专业介绍。每条答复都附可核对的依据。</p>
+            </div>
+            <div class="welcome-suggestions">
+              <div class="suggestions" aria-label="常见问题">
+                <button data-question="2026年强基计划培养方案在哪里查看？"><span class="suggestion-tag">强基计划</span><span class="suggestion-text">培养方案在哪里查看</span><span class="suggestion-arrow" aria-hidden="true">↗</span></button>
+                <button data-question="计算机科学与技术专业主要学什么？"><span class="suggestion-tag">专业介绍</span><span class="suggestion-text">计算机专业主要学什么</span><span class="suggestion-arrow" aria-hidden="true">↗</span></button>
+                <button data-question="2026年浙江大学本科招生咨询电话是什么？"><span class="suggestion-tag">联系方式</span><span class="suggestion-text">本科招生咨询电话</span><span class="suggestion-arrow" aria-hidden="true">↗</span></button>
+              </div>
+              <p class="welcome-note"><span aria-hidden="true">◦</span> 只回答浙江大学本科招生公开信息 · 个人录取判断会转人工</p>
+            </div>
+            <section id="profile-card" class="profile-card" aria-label="来访者画像"></section>
+          </div>
+        </section>
         <section id="messages" class="messages" aria-label="对话内容" aria-live="polite" aria-relevant="additions"></section>
       </div>
-      <div class="composer-wrap"><div id="error" class="error" role="alert" hidden></div><form id="composer" autocomplete="off"><label class="sr-only" for="question">输入招生问题</label><textarea id="question" autocomplete="off" placeholder="输入招生问题，Enter 发送" rows="1" maxlength="2000" enterkeyhint="send"></textarea><div class="composer-actions"><span id="input-state">校园网 / 学校 VPN</span><button id="send" type="submit" aria-label="发送问题" disabled>↑</button><button id="stop" type="button" hidden>停止等待</button></div></form><div class="footnote"><span>重要结论请核对所附来源</span><a href="./NOTICE.txt" target="_blank" rel="noopener">图标许可</a></div></div>
+      <div class="composer-wrap">
+        <div id="profile-chip" class="profile-chip" hidden><span class="profile-chip-label">已带上来访者画像</span><span id="profile-chip-text"></span><button id="profile-chip-edit" type="button">修改</button></div>
+        <div id="error" class="error" role="alert" hidden></div>
+        <form id="composer" autocomplete="off"><label class="sr-only" for="question">输入招生问题</label><textarea id="question" autocomplete="off" placeholder="输入招生问题，Enter 发送，Shift+Enter 换行" rows="1" maxlength="2000" enterkeyhint="send"></textarea><div class="composer-actions"><span id="input-state">校园网 / 学校 VPN</span><div class="composer-buttons"><button id="stop" type="button" hidden>停止等待</button><button id="send" type="submit" aria-label="发送问题" disabled>↑</button></div></div></form>
+        <div class="footnote"><span>重要结论请核对所附来源 · 画像仅存本机</span><a href="./NOTICE.txt" target="_blank" rel="noopener">图标许可</a></div>
+      </div>
     </main>
   </div>
+  <dialog id="profile-dialog" aria-labelledby="profile-dialog-title"><div class="dialog-head"><div><h2 id="profile-dialog-title">来访者画像</h2><p class="dialog-sub">只保存在本机浏览器，可随时修改；不会保存对话内容。</p></div><button id="profile-dialog-close" class="icon-button" type="button" aria-label="关闭画像">×</button></div><div id="profile-dialog-body"></div></dialog>
   <dialog id="delete-dialog"><h2>删除这段对话？</h2><p>将删除本页中的这段对话。</p><div class="dialog-actions"><button id="cancel-delete">取消</button><button id="confirm-delete" class="danger">删除</button></div></dialog>
   <div id="toast" role="status" class="toast" hidden></div>
+  <noscript><p class="noscript">请开启 JavaScript 后使用浙大招小办。</p></noscript>
 </body>
 </html>
